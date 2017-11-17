@@ -23,6 +23,8 @@ from scipy.misc import imresize
 import matplotlib.image as mpimg
 from scipy.ndimage import filters
 import urllib
+from network import *
+
 from numpy import random
 
 
@@ -30,7 +32,7 @@ import tensorflow as tf
 
 from caffe_classes import class_names
 
-train_x = zeros((1, 227,227,3)).astype(float32)
+train_x = zeros((1, 227,227,3)).astype(float32) # shape (1, 227, 227, 3)
 train_y = zeros((1, 1000))
 xdim = train_x.shape[1:]
 ydim = train_y.shape[1]
@@ -50,6 +52,39 @@ im2[:, :, 0], im2[:, :, 2] = im2[:, :, 2], im2[:, :, 0]
 
 
 ################################################################################
+def feed(self, *args):
+        '''Set the input(s) for the next operation by replacing the terminal nodes.
+        The arguments can be either layer names or the actual layers.
+        '''
+        assert len(args) != 0
+        self.terminals = []
+        for fed_layer in args:
+            if isinstance(fed_layer, basestring):
+                try:
+                    fed_layer = self.layers[fed_layer]
+                except KeyError:
+                    raise KeyError('Unknown layer name fed: %s' % fed_layer)
+            self.terminals.append(fed_layer)
+        return self
+
+class AlexNet(Network):
+    def setup(self):
+        (self.feed('data')
+             .conv(11, 11, 96, 4, 4, padding='VALID', name='conv1')
+             .lrn(2, 2e-05, 0.75, name='norm1')
+             .max_pool(3, 3, 2, 2, padding='VALID', name='pool1')
+             .conv(5, 5, 256, 1, 1, group=2, name='conv2')
+             .lrn(2, 2e-05, 0.75, name='norm2')
+             .max_pool(3, 3, 2, 2, padding='VALID', name='pool2')
+             .conv(3, 3, 384, 1, 1, name='conv3')
+             .conv(3, 3, 384, 1, 1, group=2, name='conv4')
+             .conv(3, 3, 256, 1, 1, group=2, name='conv5')
+             .max_pool(3, 3, 2, 2, padding='VALID', name='pool5')
+             .fc(4096, name='fc6')
+             .fc(4096, name='fc7')
+             .fc(1000, relu=False, name='fc8')
+             .softmax(name='prob'))
+
 
 # (self.feed('data')
 #         .conv(11, 11, 96, 4, 4, padding='VALID', name='conv1')
@@ -66,9 +101,11 @@ im2[:, :, 0], im2[:, :, 2] = im2[:, :, 2], im2[:, :, 0]
 #         .fc(1000, relu=False, name='fc8')
 #         .softmax(name='prob'))
 
-#In Python 3.5, change this to:
+
+
+# #In Python 3.5, change this to:
 net_data = load(open("bvlc_alexnet.npy", "rb"), encoding="latin1").item()
-#net_data = load("bvlc_alexnet.npy").item()
+# #net_data = load("bvlc_alexnet.npy").item()
 
 def conv(input, kernel, biases, k_h, k_w, c_o, s_h, s_w,  padding="VALID", group=1):
     '''From https://github.com/ethereon/caffe-tensorflow
