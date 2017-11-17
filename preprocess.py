@@ -13,45 +13,18 @@ class image() :
 		self.R = R
 		self.matrix = matrix
 
+#Variables
+images_path = './images'
 
+#Read for images folder 
+image_files = [f for f in listdir(images_path) if isfile(join(images_path, f))]
 
-def create_imageset():
-	#Variables
-	images_path = './images'
+#processing and reading image files
 
-	#Read for images folder 
-	image_files = [f for f in listdir(images_path) if isfile(join(images_path, f))]
+image_set = [] #contains all images
 
-	#processing and reading image files
-	max_width =0 
-	max_height = 0 
-	min_width = 999999999999999
-	min_height = 999999999999999999
-	image_set = [] #contains all images
-
-	for i in image_files : 
-		#split 
-		info = i.split('_')
-		# print(info)
-		matrix = imageio.imread(images_path + '/' + i)
-		
-		if matrix.shape[0] > max_height : 
-			max_height = matrix.shape[0]
-
-		if matrix.shape[0] < min_height : 
-			min_height = matrix.shape[0]
-
-		if matrix.shape[1] > max_width : 
-			max_width = matrix.shape[1]
-
-		if matrix.shape[1] < min_width : 
-			min_width = matrix.shape[1]
-		image_set.append(image(int(info[len(info[0])-1]), info[1] , info[2] , info[4] , matrix))
-
-	dataset_info = [min_height, max_height , min_width, max_width]
-	final_result = [image_set , dataset_info]
-
-	return final_result
-
-
-
+for i in image_files : 
+	#split 
+	info = i.split('_')
+	print(info)
+	image_set.append(image(int(info[len(info[0])-1]), info[1] , info[2] , info[4] , imageio.imread(images_path + '/' + i)))
