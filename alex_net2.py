@@ -7,11 +7,29 @@ Author: Aymeric Damien
 Project: https://github.com/aymericdamien/TensorFlow-Examples/
 '''
 
-# Import MINST data
+
 import input_data
-mnist = input_data.read_data_sets("/home/ubuntu/workspace/tmp5/data/", one_hot=True)
+import preprocess 
+
+# data_set = preprocess.create_imageset() 
+
+# Import MINST data
+mnist = input_data.read_data_sets("/Users/kld/Documents/workspace/ASLConvNet", one_hot=True)
+
+
 
 import tensorflow as tf
+
+batch_index = 0 
+
+def get_nex_batch(batch_size) :
+    labels = [i.label_vec for i in data_set[batch_index:batch_index+batch_size]] 
+    images =[i.matrix for i in data_set[batch_index:batch_index+batch_size]] 
+    batch_index += batch_size
+    return images, labels
+
+
+
 
 # Parameters
 learning_rate = 0.001
@@ -20,13 +38,13 @@ batch_size = 64
 display_step = 20
 
 # Network Parameters
-n_input = 784 # MNIST data input (img shape: 28*28)
-n_classes = 10 # MNIST total classes (0-9 digits)
+n_input = len(data_set) # MNIST data input (img shape: 28*28)
+n_classes = 36 # MNIST total classes (0-9 digits)
 dropout = 0.8 # Dropout, probability to keep units
 
 # tf Graph input
-x = tf.placeholder(tf.types.float32, [None, n_input])
-y = tf.placeholder(tf.types.float32, [None, n_classes])
+inputs = tf.placeholder(tf.types.float32, [None, n_input]) 
+classes = tf.placeholder(tf.types.float32, [None, n_classes])
 keep_prob = tf.placeholder(tf.types.float32) # dropout (keep probability)
 
 # Create AlexNet model
@@ -99,14 +117,14 @@ biases = {
 }
 
 # Construct model
-pred = alex_net(x, weights, biases, keep_prob)
+pred = alex_net(inputs, weights, biases, keep_prob)
 
 # Define loss and optimizer
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(pred, y))
+cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(pred, classes))
 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
 # Evaluate model
-correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(y,1))
+correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(classes,1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.types.float32))
 
 # Initializing the variables
@@ -118,16 +136,17 @@ with tf.Session() as sess:
     step = 1
     # Keep training until reach max iterations
     while step * batch_size < training_iters:
-        batch_xs, batch_ys = mnist.train.next_batch(batch_size)
+        batch_images, batch_labels  = get_next_batch(batch_size)
+        batch_images, batch_labels = mnist.train.next_batch(batch_size)
         # Fit training using batch data
-        sess.run(optimizer, feed_dict={x: batch_xs, y: batch_ys, keep_prob: dropout})
+        sess.run(optimizer, feed_dict={x: batch_images, classes: batch_label, keep_prob: dropout})
         if step % display_step == 0:
             # Calculate batch accuracy
-            acc = sess.run(accuracy, feed_dict={x: batch_xs, y: batch_ys, keep_prob: 1.})
+            acc = sess.run(accuracy, feed_dict={x: batch_images, classes: batch_labels, keep_prob: 1.})
             # Calculate batch loss
-            loss = sess.run(cost, feed_dict={x: batch_xs, y: batch_ys, keep_prob: 1.})
-            print "Iter " + str(step*batch_size) + ", Minibatch Loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc)
+            loss = sess.run(cost, feed_dict={x: batch_images, y: batch_labels, keep_prob: 1.})
+            print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
         step += 1
-    print "Optimization Finished!"
+    print("Optimization Finished!")
     # Calculate accuracy for 256 mnist test images
-    print "Testing Accuracy:", sess.run(accuracy, feed_dict={x: mnist.test.images[:256], y: mnist.test.labels[:256], keep_prob: 1.})
+    print("Testing Accuracy:", sess.run(accuracy, feed_dict={x: mnist.test.images[:256], y: mnist.test.labels[:256], keep_prob: 1.}))

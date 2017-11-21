@@ -2,3 +2,6 @@
 .DS_Store
 bvlc_alexnet.npy
 /__pycache__
+*.gz
+input_data.py
+input_data.pyc

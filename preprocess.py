@@ -8,10 +8,20 @@ import imageio
 class image() : 
 	def __init__(self, signer_num, gesture , ill , R, matrix):
 		self.signer_num  = signer_num
-		self.label = gesture 
+		self.label = gesture
+		self.label_vec = np.zeros(36)
+		order = ord(gesture)
+		if order <= 57: 
+			self.label_vec[order - 48] = 1 
+
+		else : 
+			self.label_vec[order - 87] = 1
+
 		self.ill = ill
 		self.R = R
 		self.matrix = matrix
+
+		
 
 
 def create_imageset():
@@ -45,7 +55,10 @@ def create_imageset():
 
 		if matrix.shape[1] < min_width : 
 			min_width = matrix.shape[1]
+
 		image_set.append(image(int(info[len(info[0])-1]), info[1] , info[2] , info[4] , matrix))
+		
+
 
 	dataset_info = [min_height, max_height , min_width, max_width]
 	final_result = [image_set , dataset_info]
