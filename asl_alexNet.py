@@ -23,10 +23,9 @@ from scipy.misc import imresize
 import matplotlib.image as mpimg
 from scipy.ndimage import filters
 import urllib
+
 from network import *
-
 from numpy import random
-
 
 import tensorflow as tf
 
@@ -106,6 +105,7 @@ class AlexNet(Network):
 # #In Python 3.5, change this to:
 net_data = load(open("bvlc_alexnet.npy", "rb"), encoding="latin1").item()
 # #net_data = load("bvlc_alexnet.npy").item()
+
 
 def conv(input, kernel, biases, k_h, k_w, c_o, s_h, s_w,  padding="VALID", group=1):
     '''From https://github.com/ethereon/caffe-tensorflow
