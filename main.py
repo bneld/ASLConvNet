@@ -1,7 +1,5 @@
 import preprocess
-
-import asl_alexNet
-
+import alex_net2.py
 
 
 #images result
@@ -16,6 +14,7 @@ import asl_alexNet
 
 
 #images result
+print('\n\n\n***************')
 result = preprocess.create_imageset() 
 print(result[1])
 
