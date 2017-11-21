@@ -1,2 +1,4 @@
 /images
 .DS_Store
+/__pycache__
+bvlc_alexnet.npy
