@@ -7,7 +7,6 @@ Author: Aymeric Damien
 Project: https://github.com/aymericdamien/TensorFlow-Examples/
 '''
 
-
 import input_data
 import preprocess 
 
@@ -15,8 +14,6 @@ import preprocess
 
 # Import MINST data
 mnist = input_data.read_data_sets("/Users/kld/Documents/workspace/ASLConvNet", one_hot=True)
-
-
 
 import tensorflow as tf
 
@@ -27,9 +24,6 @@ def get_nex_batch(batch_size) :
     images =[i.matrix for i in data_set[batch_index:batch_index+batch_size]] 
     batch_index += batch_size
     return images, labels
-
-
-
 
 # Parameters
 learning_rate = 0.001
@@ -59,7 +53,9 @@ def norm(name, l_input, lsize=4):
 
 def alex_net(_X, _weights, _biases, _dropout):
     # Reshape input picture
-    _X = tf.reshape(_X, shape=[-1, 28, 28, 1])
+    height = 28
+    width = 28
+    _X = tf.reshape(_X, shape=[-1, height, width, 3])
 
     # Convolution Layer
     conv1 = conv2d('conv1', _X, _weights['wc1'], _biases['bc1'])
@@ -99,6 +95,7 @@ def alex_net(_X, _weights, _biases, _dropout):
     return out
 
 # Store layers weight & bias
+#                                       |kernel| |num layers|
 weights = {
     'wc1': tf.Variable(tf.random_normal([3, 3, 1, 64])),
     'wc2': tf.Variable(tf.random_normal([3, 3, 64, 128])),

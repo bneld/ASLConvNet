@@ -21,9 +21,6 @@ class image() :
 		self.R = R
 		self.matrix = matrix
 
-		
-
-
 def create_imageset():
 	#Variables
 	images_path = './images'
