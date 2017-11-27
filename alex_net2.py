@@ -53,13 +53,17 @@ def alex_net(_X, _weights, _biases, _dropout):
     # Reshape input picture
     _X = tf.reshape(_X, shape=[-1, 28, 28, 3]) #REVISIT
 
-
+    # image is 680 x 610 x 3
     # Convolution Layer
     conv1 = conv2d('conv1', _X, _weights['wc1'], _biases['bc1'])
+    # image is 680 x 610 x 64
     # Max Pooling (down-sampling)
     pool1 = max_pool('pool1', conv1, k=2)
+    # image is ...
+    # width (610 - 2 + 2(2))/2 + 1) = 307
     # Apply Normalization
     norm1 = norm('norm1', pool1, lsize=4)
+    # image is ...
     # Apply Dropout
     norm1 = tf.nn.dropout(norm1, _dropout)
 
