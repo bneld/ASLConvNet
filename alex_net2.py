@@ -6,18 +6,14 @@ AlexNet Paper (http://papers.nips.cc/paper/4824-imagenet-classification-with-dee
 Author: Aymeric Damien
 Project: https://github.com/aymericdamien/TensorFlow-Examples/
 '''
-
+import tensorflow as tf
 import input_data
 import preprocess 
 
-# data_set = preprocess.create_imageset() 
+data_set = preprocess.create_imageset() 
 
 # Import MINST data
-mnist = input_data.read_data_sets("/Users/kld/Documents/workspace/ASLConvNet", one_hot=True)
-
-import tensorflow as tf
-
-batch_index = 0 
+# mnist = input_data.read_data_sets("/Users/kld/Documents/workspace/ASLConvNet", one_hot=True)
 
 def get_nex_batch(batch_size) :
     labels = [i.label_vec for i in data_set[batch_index:batch_index+batch_size]] 
@@ -26,6 +22,7 @@ def get_nex_batch(batch_size) :
     return images, labels
 
 # Parameters
+batch_index = 0 
 learning_rate = 0.001
 training_iters = 200000
 batch_size = 64
@@ -33,7 +30,7 @@ display_step = 20
 
 # Network Parameters
 n_input = len(data_set) # MNIST data input (img shape: 28*28)
-n_classes = 36 # MNIST total classes (0-9 digits)
+n_classes = 36 #  total classes (0-9 digits)
 dropout = 0.8 # Dropout, probability to keep units
 
 # tf Graph input
@@ -42,6 +39,7 @@ classes = tf.placeholder(tf.types.float32, [None, n_classes])
 keep_prob = tf.placeholder(tf.types.float32) # dropout (keep probability)
 
 # Create AlexNet model
+
 def conv2d(name, l_input, w, b):
     return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(l_input, w, strides=[1, 1, 1, 1], padding='SAME'),b), name=name)
 
@@ -53,9 +51,8 @@ def norm(name, l_input, lsize=4):
 
 def alex_net(_X, _weights, _biases, _dropout):
     # Reshape input picture
-    height = 28
-    width = 28
-    _X = tf.reshape(_X, shape=[-1, height, width, 3])
+    _X = tf.reshape(_X, shape=[-1, 28, 28, 3]) #REVISIT
+
 
     # Convolution Layer
     conv1 = conv2d('conv1', _X, _weights['wc1'], _biases['bc1'])

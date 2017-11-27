@@ -5,3 +5,5 @@ bvlc_alexnet.npy
 *.gz
 input_data.py
 input_data.pyc
+cv.py
+test.png
