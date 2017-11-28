@@ -1,33 +1,23 @@
-'''
-AlexNet implementation example using TensorFlow library.
-This example is using the MNIST database of handwritten digits (http://yann.lecun.com/exdb/mnist/)
-AlexNet Paper (http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf)
-
-Author: Aymeric Damien
-Project: https://github.com/aymericdamien/TensorFlow-Examples/
-'''
 import tensorflow as tf
-import input_data
 import preprocess 
 
 data_set = preprocess.create_imageset() 
+print("Created data set.");
 training = data_set[:40]
 test = data_set[40:51]
 
 test_images= [i.matrix for i in test]
 test_labels= [i.label_vec for i in test]
 
-# Import MINST data
-# mnist = input_data.read_data_sets("/Users/kld/Documents/workspace/ASLConvNet", one_hot=True)
+batch_index = 0 
 
-def get_nex_batch(batch_size) :
+def get_next_batch(batch_size) :
     labels = [i.label_vec for i in training[batch_index:batch_index+batch_size]] 
     images =[i.matrix for i in training[batch_index:batch_index+batch_size]] 
     batch_index += batch_size
     return images, labels
 
 # Parameters
-batch_index = 0 
 learning_rate = 0.001
 training_iters = 200000
 batch_size = 64
@@ -44,7 +34,6 @@ classes = tf.placeholder(tf.float32, [None, n_classes])
 keep_prob = tf.placeholder(tf.float32) # dropout (keep probability)
 
 # Create AlexNet model
-
 def conv2d(name, l_input, w, b):
     return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(l_input, w, strides=[1, 1, 1, 1], padding='SAME'),b), name=name)
 
@@ -56,7 +45,11 @@ def norm(name, l_input, lsize=4):
 
 def alex_net(_X, _weights, _biases, _dropout):
     # Reshape input picture
-    _X = tf.reshape(_X, shape=[-1, 610, 680, 3]) #REVISIT
+    # height = 28
+    # width = 28
+    height = 680
+    width = 610
+    _X = tf.reshape(_X, shape=[-1, height, width, 3]) #REVISIT
 
     # image is 680 x 610 x 3
     # Convolution Layer
@@ -64,31 +57,39 @@ def alex_net(_X, _weights, _biases, _dropout):
     # image is 680 x 610 x 64
     # Max Pooling (down-sampling)
     pool1 = max_pool('pool1', conv1, k=2)
-    # image is ...
-    # width (610 - 2 + 2(2))/2 + 1) = 307
+    # image is 340 x 305 x 64
     # Apply Normalization
     norm1 = norm('norm1', pool1, lsize=4)
-    # image is ...
+    # image is 340 x 305 x 64
     # Apply Dropout
     norm1 = tf.nn.dropout(norm1, _dropout)
+    # image is 340 x 305 x 64
 
     # Convolution Layer
     conv2 = conv2d('conv2', norm1, _weights['wc2'], _biases['bc2'])
+    # image is 340 x 305 x 128
     # Max Pooling (down-sampling)
     pool2 = max_pool('pool2', conv2, k=2)
+    # image is 170 x 153 x 128
     # Apply Normalization
     norm2 = norm('norm2', pool2, lsize=4)
+    # image is 170 x 153 x 128
     # Apply Dropout
     norm2 = tf.nn.dropout(norm2, _dropout)
+    # image is 170 x 153 x 128
 
     # Convolution Layer
     conv3 = conv2d('conv3', norm2, _weights['wc3'], _biases['bc3'])
+    # image is 170 x 153 x 256
     # Max Pooling (down-sampling)
     pool3 = max_pool('pool3', conv3, k=2)
+    # image is 85 x 77 x 256
     # Apply Normalization
     norm3 = norm('norm3', pool3, lsize=4)
+    # image is 85 x 77 x 256
     # Apply Dropout
     norm3 = tf.nn.dropout(norm3, _dropout)
+    # image is 85 x 77 x 256
 
     # Fully connected layer
     dense1 = tf.reshape(norm3, [-1, _weights['wd1'].get_shape().as_list()[0]]) # Reshape conv3 output to fit dense layer input
@@ -101,14 +102,18 @@ def alex_net(_X, _weights, _biases, _dropout):
     return out
 
 # Store layers weight & bias
+# nnInputHeight = 4
+# nnInputWidth = 4
+nnInputHeight = 85
+nnInputWidth = 77
 #                                       |kernel| |num layers|
 weights = {
     'wc1': tf.Variable(tf.random_normal([3, 3, 3, 64])),
     'wc2': tf.Variable(tf.random_normal([3, 3, 64, 128])),
     'wc3': tf.Variable(tf.random_normal([3, 3, 128, 256])),
-    'wd1': tf.Variable(tf.random_normal([4*4*256, 1024])),
+    'wd1': tf.Variable(tf.random_normal([nnInputHeight*nnInputWidth*256, 1024])),
     'wd2': tf.Variable(tf.random_normal([1024, 1024])),
-    'out': tf.Variable(tf.random_normal([1024, 10]))
+    'out': tf.Variable(tf.random_normal([1024, n_classes]))
 }
 biases = {
     'bc1': tf.Variable(tf.random_normal([64])),
@@ -123,7 +128,7 @@ biases = {
 pred = alex_net(inputs, weights, biases, keep_prob)
 
 # Define loss and optimizer
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(pred, classes))
+cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=classes))
 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
 # Evaluate model
@@ -131,7 +136,7 @@ correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(classes,1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # Initializing the variables
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 
 # Launch the graph
 with tf.Session() as sess:
@@ -139,10 +144,10 @@ with tf.Session() as sess:
     step = 1
     # Keep training until reach max iterations
     while step * batch_size < training_iters:
+        print("Step: " + str(step))
         batch_images, batch_labels  = get_next_batch(batch_size)
-        batch_images, batch_labels = mnist.train.next_batch(batch_size)
         # Fit training using batch data
-        sess.run(optimizer, feed_dict={x: batch_images, classes: batch_label, keep_prob: dropout})
+        sess.run(optimizer, feed_dict={x: batch_images, classes: batch_labels, keep_prob: dropout})
         if step % display_step == 0:
             # Calculate batch accuracy
             acc = sess.run(accuracy, feed_dict={x: batch_images, classes: batch_labels, keep_prob: 1.})
