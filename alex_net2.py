@@ -4,30 +4,43 @@ import numpy as np
 
 data_set = preprocess.create_imageset() 
 print("Created data set.");
+# print(data_set[0].matrix.shape)
+# dataset = np.array(data_set).reshape((-1, 28,28, 3))
+# print(dataset.shape)
+# dsafsdf
+
+
+
+
 training = data_set[:40]
 test = data_set[40:51]
 
-test_images= [np.array(i.matrix).reshape(28,28,3) for i in test]
-test_labels= [i.label_vec for i in test]
-print(test_images[0].shape)
+# training_images = np.array(np.array(i.matrix).reshape(28,28,3) for i in training)
+test_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in test])
+training_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in training])
+
+
+training_labels = np.array(np.array([i.label_vec for i in training]))
+test_lables = np.array(np.array([i.label_vec for i in test]))
+
+print("*********INFO**********")
+print("test images : ",  test_images.shape)
+print("training images : ",  training_images.shape)
+print("test labels : ",  test_lables.shape)
+print("train labels : ",  training_labels.shape)
+print('*********************\n\n\n')
+
 
 batch_index = 0 
 img_height = 28
 img_width = 28
 batch_size = 20
-n_input = 784
+n_input = 784 * 3 
 def get_next_batch(batch_size) :
     global batch_index
-
-    labels = [i.label_vec for i in training[batch_index:batch_index+batch_size]] 
-    labels = np.array(labels)
-    labels = labels.reshape((batch_size , n_classes))
-
     # create imageset of matrix numInputs x numTotalPixels
-    images =[i.matrix for i in training[batch_index:batch_index+batch_size]] 
-    images = np.array(images)
-    print("=== " + str(images.shape))
-    images = images.reshape((batch_size , img_height*img_width))
+    images = training_images[batch_index: batch_index+batch_size]
+    labels = training_labels[batch_index: batch_index+batch_size]
     batch_index += batch_size
     return images, labels
 
