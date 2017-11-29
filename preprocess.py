@@ -3,7 +3,12 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 import imageio
-# from matplotlib import pyplot as plt
+
+#for padding purposes 
+# max_width  = 610 
+# max_height = 680
+max_width  = 28 
+max_height = 28
 
 # hand5_e_bot_seg_5_cropped.png
 class image() : 
@@ -22,9 +27,15 @@ class image() :
 		self.R = R
 		self.matrix = matrix
 
-#for padding purposes 
-max_width  = 610 
-max_height = 680
+def scale_image(image, dim):
+	# needs dimension = (width, height)
+	return cv2.resize(image, (dim[1], dim[0]))
+def scale_height_keep_ratio(image, target_height):
+	r = target_height / image.shape[0]
+	return (target_height, int(image.shape[1] * r))
+def scale_width_keep_ratio(image, target_width):
+	r = target_width / image.shape[1]
+	return (int(image.shape[0] * r), target_width)
 
 def pad_image(target_image) : 
 	#get current dimensions
@@ -67,8 +78,19 @@ def create_imageset():
 		# print(info)
 		matrix = cv2.imread(images_path + '/' + i)
 		RGB_img = cv2.cvtColor(matrix, cv2.COLOR_BGR2RGB)
+		# scale image
+		height, width = RGB_img.shape[0], RGB_img.shape[1]
+		# print(scale_height_keep_ratio(RGB_img, max_height) if height > width else scale_width_keep_ratio(RGB_img, max_width))
+		dimensions = scale_height_keep_ratio(RGB_img, max_height) if height > width else scale_width_keep_ratio(RGB_img, max_width)
+		RGB_img = scale_image(RGB_img, dimensions)
+		# print(str(RGB_img.shape[0]) + ", " + str(RGB_img.shape[1]))
+		# pad image to 100 x 100
 		matrix = pad_image(RGB_img)
+		# print(str(matrix.shape[0]) + ", " + str(matrix.shape[1]))
 
+
+		# cv2.imshow('image',matrix)
+		# cv2.waitKey(0)
 
 		image_set.append(image(int(info[len(info[0])-1]), info[1] , info[2] , info[4] , matrix))
 

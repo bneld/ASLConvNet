@@ -1,17 +1,22 @@
 import tensorflow as tf
 import preprocess 
+import numpy as np
 
 data_set = preprocess.create_imageset() 
 print("Created data set.");
 training = data_set[:40]
 test = data_set[40:51]
 
-test_images= [i.matrix for i in test]
+test_images= [np.array(i.matrix).reshape(28,28,3) for i in test]
 test_labels= [i.label_vec for i in test]
+print(test_images[0].shape)
 
 batch_index = 0 
+img_height = 28
+img_width = 28
 
 def get_next_batch(batch_size) :
+    global batch_index
     labels = [i.label_vec for i in training[batch_index:batch_index+batch_size]] 
     images =[i.matrix for i in training[batch_index:batch_index+batch_size]] 
     batch_index += batch_size
@@ -20,11 +25,11 @@ def get_next_batch(batch_size) :
 # Parameters
 learning_rate = 0.001
 training_iters = 200000
-batch_size = 64
+batch_size = 20
 display_step = 20
 
 # Network Parameters
-n_input = len(data_set) # MNIST data input (img shape: 28*28)
+n_input = len(training) # MNIST data input (img shape: 28*28)
 n_classes = 36 #  total classes (0-9 digits)
 dropout = 0.8 # Dropout, probability to keep units
 
@@ -102,25 +107,32 @@ def alex_net(_X, _weights, _biases, _dropout):
     return out
 
 # Store layers weight & bias
-# nnInputHeight = 4
-# nnInputWidth = 4
-nnInputHeight = 85
-nnInputWidth = 77
+nnInputHeight = 4
+nnInputWidth = 4
+# nnInputHeight = 85
+# nnInputWidth = 77
+
+numKernels1 = 64
+numKernels2 = 128
+numKernels3 = 256
+numNeurons1 = 1024
+numNeurons2 = 1024
+numImageChannels = 3
 #                                       |kernel| |num layers|
 weights = {
-    'wc1': tf.Variable(tf.random_normal([3, 3, 3, 64])),
-    'wc2': tf.Variable(tf.random_normal([3, 3, 64, 128])),
-    'wc3': tf.Variable(tf.random_normal([3, 3, 128, 256])),
-    'wd1': tf.Variable(tf.random_normal([nnInputHeight*nnInputWidth*256, 1024])),
-    'wd2': tf.Variable(tf.random_normal([1024, 1024])),
-    'out': tf.Variable(tf.random_normal([1024, n_classes]))
+    'wc1': tf.Variable(tf.random_normal([3, 3, numImageChannels, numKernels1])),
+    'wc2': tf.Variable(tf.random_normal([3, 3, numKernels1, numKernels2])),
+    'wc3': tf.Variable(tf.random_normal([3, 3, numKernels2, numKernels3])),
+    'wd1': tf.Variable(tf.random_normal([nnInputHeight*nnInputWidth*numKernels3, numNeurons1])),
+    'wd2': tf.Variable(tf.random_normal([numNeurons1, numNeurons2])),
+    'out': tf.Variable(tf.random_normal([numNeurons2, n_classes]))
 }
 biases = {
-    'bc1': tf.Variable(tf.random_normal([64])),
-    'bc2': tf.Variable(tf.random_normal([128])),
-    'bc3': tf.Variable(tf.random_normal([256])),
-    'bd1': tf.Variable(tf.random_normal([1024])),
-    'bd2': tf.Variable(tf.random_normal([1024])),
+    'bc1': tf.Variable(tf.random_normal([numKernels1])),
+    'bc2': tf.Variable(tf.random_normal([numKernels2])),
+    'bc3': tf.Variable(tf.random_normal([numKernels3])),
+    'bd1': tf.Variable(tf.random_normal([numNeurons1])),
+    'bd2': tf.Variable(tf.random_normal([numNeurons2])),
     'out': tf.Variable(tf.random_normal([n_classes]))
 }
 
@@ -147,17 +159,17 @@ with tf.Session() as sess:
         print("Step: " + str(step))
         batch_images, batch_labels  = get_next_batch(batch_size)
         # Fit training using batch data
-        sess.run(optimizer, feed_dict={x: batch_images, classes: batch_labels, keep_prob: dropout})
+        sess.run(optimizer, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: dropout})
         if step % display_step == 0:
             # Calculate batch accuracy
-            acc = sess.run(accuracy, feed_dict={x: batch_images, classes: batch_labels, keep_prob: 1.})
+            acc = sess.run(accuracy, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: 1.})
             # Calculate batch loss
-            loss = sess.run(cost, feed_dict={x: batch_images, y: batch_labels, keep_prob: 1.})
+            loss = sess.run(cost, feed_dict={inputs: batch_images, y: batch_labels, keep_prob: 1.})
             print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
         step += 1
     print("Optimization Finished!")
     # Calculate accuracy for 256 mnist test images
-    print("Testing Accuracy:", sess.run(accuracy, feed_dict={x: test_images, y: test_labels, keep_prob: 1.}))
+    print("Testing Accuracy:", sess.run(accuracy, feed_dict={inputs: test_images, y: test_labels, keep_prob: 1.}))
 
 
 
