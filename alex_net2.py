@@ -1,63 +1,65 @@
 import tensorflow as tf
 import preprocess 
 import numpy as np
+import matplotlib.pyplot as plt
 
 data_set = preprocess.create_imageset() 
 print("Created data set.");
-# print(data_set[0].matrix.shape)
-# dataset = np.array(data_set).reshape((-1, 28,28, 3))
-# print(dataset.shape)
-# dsafsdf
 
-
-
-
-training = data_set[:40]
-test = data_set[40:51]
+training = data_set[:400]
+test = data_set[400:501]
 
 # training_images = np.array(np.array(i.matrix).reshape(28,28,3) for i in training)
 test_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in test])
 training_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in training])
 
+training_labels = np.array([np.array(i.label_vec) for i in training])
+test_labels = np.array([np.array(i.label_vec) for i in test])
 
-training_labels = np.array(np.array([i.label_vec for i in training]))
-test_lables = np.array(np.array([i.label_vec for i in test]))
-
-print("*********INFO**********")
+print("\n*********INFO**********")
 print("test images : ",  test_images.shape)
 print("training images : ",  training_images.shape)
-print("test labels : ",  test_lables.shape)
+print("test labels : ",  test_labels.shape)
 print("train labels : ",  training_labels.shape)
 print('*********************\n\n\n')
 
-
-batch_index = 0 
 img_height = 28
 img_width = 28
 batch_size = 20
-n_input = 784 * 3 
-def get_next_batch(batch_size) :
-    global batch_index
+# n_input = 784 * 3 
+def get_next_batch(batch_index, batch_size) :
     # create imageset of matrix numInputs x numTotalPixels
     images = training_images[batch_index: batch_index+batch_size]
     labels = training_labels[batch_index: batch_index+batch_size]
-    batch_index += batch_size
     return images, labels
 
 # Parameters
 learning_rate = 0.001
-training_iters = 200000
-# batch_size = 20
-display_step = 20
+training_iters = len(training)
+n_epochs = 30
+display_step = 10
+
+# Store layers weight & bias
+nnInputHeight = 4
+nnInputWidth = 4
+# nnInputHeight = 85
+# nnInputWidth = 77
+numKernels1 = 64
+numKernels2 = 128
+numKernels3 = 256
+numNeurons1 = 1024
+numNeurons2 = 1024
+numImageChannels = 3
 
 # Network Parameters
-n_input = 784 # MNIST data input (img shape: 28*28)
+# n_input = 784 # MNIST data input (img shape: 28*28)
 n_classes = 36 #  total classes (0-9 digits)
 dropout = 0.8 # Dropout, probability to keep units
 
 # tf Graph input
-inputs = tf.placeholder(tf.float32, [None, n_input]) 
+inputs = tf.placeholder(tf.float32, [None, img_height, img_width, numImageChannels]) 
 classes = tf.placeholder(tf.float32, [None, n_classes])
+predicted_classes = tf.placeholder(tf.float32, [None, n_classes])
 keep_prob = tf.placeholder(tf.float32) # dropout (keep probability)
 
 # Create AlexNet model
@@ -128,19 +130,7 @@ def alex_net(_X, _weights, _biases, _dropout):
     out = tf.matmul(dense2, _weights['out']) + _biases['out']
     return out
 
-# Store layers weight & bias
-nnInputHeight = 4
-nnInputWidth = 4
-# nnInputHeight = 85
-# nnInputWidth = 77
-
-numKernels1 = 64
-numKernels2 = 128
-numKernels3 = 256
-numNeurons1 = 1024
-numNeurons2 = 1024
-numImageChannels = 3
-#                                       |kernel| |num layers|
+#                                       |----- kernel --------| |num layers|
 weights = {
     'wc1': tf.Variable(tf.random_normal([3, 3, numImageChannels, numKernels1])),
     'wc2': tf.Variable(tf.random_normal([3, 3, numKernels1, numKernels2])),
@@ -171,31 +161,52 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # Initializing the variables
 init = tf.global_variables_initializer()
+training_acc = []
 
 # Launch the graph
 with tf.Session() as sess:
     sess.run(init)
-    step = 1
-    # Keep training until reach max iterations
-    while step * batch_size < training_iters:
-        print("Step: " + str(step))
-        batch_images, batch_labels  = get_next_batch(batch_size)
-        # batch_images = np.reshape(batch_images, (-1, batch_size))
-        # batch_labels =  np.reshape(batch_labels, (-1, batch_size))
-        print(batch_labels)
+    for epoch in range(1, n_epochs+1):
+        print("\n ===== Epoch {} ====\n".format(epoch))
+        step = 1
+        batch_index = 0 
 
-        # Fit training using batch data
-        sess.run(optimizer, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: dropout})
-        if step % display_step == 0:
-            # Calculate batch accuracy
-            acc = sess.run(accuracy, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: 1.})
-            # Calculate batch loss
-            loss = sess.run(cost, feed_dict={inputs: batch_images, y: batch_labels, keep_prob: 1.})
-            print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
-        step += 1
+        # Keep training until reach max iterations
+        while step * batch_size < training_iters:
+            print("Step: " + str(step))
+            batch_images, batch_labels  = get_next_batch(batch_index, batch_size)
+            batch_index += batch_size
+
+            # batch_images = np.reshape(batch_images, (-1, batch_size))
+            # batch_labels =  np.reshape(batch_labels, (-1, batch_size))
+            print(batch_images.shape)
+
+            # Fit training using batch data
+            sess.run(optimizer, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: dropout})
+
+            if step % display_step == 0:
+                # Calculate batch accuracy
+                acc = sess.run(accuracy, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: 1.})
+                # Calculate batch loss
+                loss = sess.run(cost, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: 1.})
+                print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + "{:.6f}".format(loss) + ", Batch Accuracy= " + "{:.5f}".format(acc))
+            step += 1
+        # end of epoch
+        acc = sess.run(accuracy, feed_dict={inputs: training_images, classes: training_labels, keep_prob: 1.})
+        print("Training Accuracy on Full Set = {}".format(acc))
+        training_acc.append(acc)
+
     print("Optimization Finished!")
-    # Calculate accuracy for 256 mnist test images
-    print("Testing Accuracy:", sess.run(accuracy, feed_dict={inputs: test_images, y: test_labels, keep_prob: 1.}))
+    print("Testing Accuracy:", sess.run(accuracy, feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.}))
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_xlabel('Epoch')
+ax.set_ylabel('Accuracy')
+plt.title("Training Accuracy")
+plt.plot(training_acc)
+plt.legend()
+plt.show()
 
 
 
