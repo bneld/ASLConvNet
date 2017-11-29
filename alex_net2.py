@@ -14,22 +14,31 @@ print(test_images[0].shape)
 batch_index = 0 
 img_height = 28
 img_width = 28
-
+batch_size = 20
+n_input = 784
 def get_next_batch(batch_size) :
     global batch_index
+
     labels = [i.label_vec for i in training[batch_index:batch_index+batch_size]] 
+    labels = np.array(labels)
+    labels = labels.reshape((batch_size , n_classes))
+
+    # create imageset of matrix numInputs x numTotalPixels
     images =[i.matrix for i in training[batch_index:batch_index+batch_size]] 
+    images = np.array(images)
+    print("=== " + str(images.shape))
+    images = images.reshape((batch_size , img_height*img_width))
     batch_index += batch_size
     return images, labels
 
 # Parameters
 learning_rate = 0.001
 training_iters = 200000
-batch_size = 20
+# batch_size = 20
 display_step = 20
 
 # Network Parameters
-n_input = len(training) # MNIST data input (img shape: 28*28)
+n_input = 784 # MNIST data input (img shape: 28*28)
 n_classes = 36 #  total classes (0-9 digits)
 dropout = 0.8 # Dropout, probability to keep units
 
@@ -52,8 +61,8 @@ def alex_net(_X, _weights, _biases, _dropout):
     # Reshape input picture
     # height = 28
     # width = 28
-    height = 680
-    width = 610
+    height = 28
+    width = 28
     _X = tf.reshape(_X, shape=[-1, height, width, 3]) #REVISIT
 
     # image is 680 x 610 x 3
@@ -158,6 +167,10 @@ with tf.Session() as sess:
     while step * batch_size < training_iters:
         print("Step: " + str(step))
         batch_images, batch_labels  = get_next_batch(batch_size)
+        # batch_images = np.reshape(batch_images, (-1, batch_size))
+        # batch_labels =  np.reshape(batch_labels, (-1, batch_size))
+        print(batch_labels)
+
         # Fit training using batch data
         sess.run(optimizer, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: dropout})
         if step % display_step == 0:
