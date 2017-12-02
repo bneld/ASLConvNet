@@ -3,6 +3,7 @@ import preprocess
 import numpy as np
 import matplotlib.pyplot as plt
 from random import sample
+import sys
 
 def split_by_percent(data_set):
     num_val = int(len(data_set)*0.2)
@@ -19,9 +20,24 @@ def split_by_percent(data_set):
     train_data = np.delete(data_set, val_indices, 0)
     return train_data, val_data, test_data
 
+def split_train_val_test(split_t): 
+    #training
+    if split_t == 1 :
+        training_data = [i for i in data_set if i.signer_num <=4 ]
+        test_data = [i for i in data_set if i.signer_num == 5 ]
+        return training_data , test_data
+    elif split_t == 2: 
+        training_data = [ i for i in data_set if i.signer_num <=3]
+        validation_data = [i for i in data_set if i.signer_num == 4 ]
+        testing_data = [i  for i in data_set if i.signer_num == 5 ]
+        return training_data , validation_data , testing_data
+    else : 
+        print('Error Split Type : ' , split_t , ' is not supported')
+
 usePercentage = True
 usePersonSplit1 = False
 usePersonSplit2 = False
+have_validation = False
 
 # read in images
 data_set = np.array(preprocess.create_imageset())
@@ -38,12 +54,29 @@ image_set = np.array([np.array(i.matrix).reshape(28,28,3) for i in data_set])
 # Mix everything: 60% training, 20% validation, 20% testing
 if usePercentage:
     training, validation, test = split_by_percent(data_set)
+    have_validation = True
+elif usePersonSplit1:
+    training, test = split_train_val_test(1)
+    print("Split 1")
+    print("Training Set  : " , len(training)) 
+    print("Testing  Set  : " , len(test))
+    have_validation = False
+elif usePersonSplit2:
+    training, validation, test = split_train_val_test(2)
+    print("Split 1")
+    print("Training    Set  : " , len(training))
+    print("Validation  Set  : " , len(validation)) 
+    print("Testing     Set  : " , len(test))
+    have_validation = True
 
-# training_images = np.array(np.array(i.matrix).reshape(28,28,3) for i in training)
-test_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in test])
 training_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in training])
-
 training_labels = np.array([np.array(i.label_vec) for i in training])
+
+if have_validation:
+    validation_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in validation])
+    validation_labels = np.array([np.array(i.label_vec) for i in validation])
+
+test_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in test])
 test_labels = np.array([np.array(i.label_vec) for i in test])
 
 print("\n*********INFO**********")
@@ -191,7 +224,9 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 init = tf.global_variables_initializer()
 training_acc = []
 
-# Launch the graph
+if have_validation:
+    old_val_acc = -1 * sys.maxsize
+
 with tf.Session() as sess:
     sess.run(init)
     for epoch in range(1, n_epochs+1):
@@ -207,7 +242,7 @@ with tf.Session() as sess:
 
             # batch_images = np.reshape(batch_images, (-1, batch_size))
             # batch_labels =  np.reshape(batch_labels, (-1, batch_size))
-            print(batch_images.shape)
+            # print(batch_images.shape)
 
             # Fit training using batch data
             sess.run(optimizer, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: dropout})
@@ -220,9 +255,21 @@ with tf.Session() as sess:
                 print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + "{:.6f}".format(loss) + ", Batch Accuracy= " + "{:.5f}".format(acc))
             step += 1
         # end of epoch
+        # calculate training acc
         acc = sess.run(accuracy, feed_dict={inputs: training_images, classes: training_labels, keep_prob: 1.})
-        print("Training Accuracy on Full Training Set = {}".format(acc))
+        print("Accuracy on Training Set = {}".format(acc))
         training_acc.append(acc)
+        # calculate validation accuracy every two steps
+        if have_validation and epoch % 2 == 0: 
+            curr_val_acc = sess.run(accuracy, feed_dict={inputs: validation_images, classes: validation_labels, keep_prob: 1.})
+            print("Accuracy on Validation Set = {}".format(curr_val_acc))
+            if(curr_val_acc < old_val_acc):
+                # validation accuracy is getting worse
+                # so end training to prevent overfitting
+                print("Validation accuracy has decreased ({} -> {})".format(old_val_acc, curr_val_acc))
+                print("Stopping training to prevent overfitting.")
+                break
+        
 
     print("Optimization Finished!")
     print("Testing Accuracy: ", sess.run(accuracy, feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.}))
