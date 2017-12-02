@@ -31,7 +31,7 @@ def split_train_val_test(split_t):
         validation_data = [i for i in data_set if i.signer_num == 4 ]
         testing_data = [i  for i in data_set if i.signer_num == 5 ]
         return training_data , validation_data , testing_data
-    else : 
+    else: 
         print('Error Split Type : ' , split_t , ' is not supported')
 
 usePercentage = True
@@ -39,30 +39,50 @@ usePersonSplit1 = False
 usePersonSplit2 = False
 have_validation = False
 
+img_height = 28
+img_width = 28
+batch_size = 20
+
+# Parameters
+learning_rate = 0.001
+
+n_epochs = 30
+display_step = 10
+
+# Store layers weight & bias
+nnInputHeight = 4
+nnInputWidth = 4
+numKernels1 = 64
+numKernels2 = 128
+numKernels3 = 256
+numNeurons1 = 1024
+numNeurons2 = 1024
+numImageChannels = 3
+
+# Network Parameters
+n_classes = 36 #  total classes (0-9 digits)
+dropout = 0.8 # Dropout, probability to keep units
+
 # read in images
 data_set = np.array(preprocess.create_imageset())
 print("Created data set.")
 
 image_set = np.array([np.array(i.matrix).reshape(28,28,3) for i in data_set])
 
-# training = data_set[:400]
-# test = data_set[400:501]
-#Splits
-# 3 subject for training, 1 validation, 1 testing
-# def split_train_val_test():
-
-# Mix everything: 60% training, 20% validation, 20% testing
 if usePercentage:
     training, validation, test = split_by_percent(data_set)
+    training_iters = len(training)
     have_validation = True
 elif usePersonSplit1:
     training, test = split_train_val_test(1)
+    training_iters = len(training)
     print("Split 1")
     print("Training Set  : " , len(training)) 
     print("Testing  Set  : " , len(test))
     have_validation = False
 elif usePersonSplit2:
     training, validation, test = split_train_val_test(2)
+    training_iters = len(training)
     print("Split 1")
     print("Training    Set  : " , len(training))
     print("Validation  Set  : " , len(validation)) 
@@ -86,38 +106,11 @@ print("test labels : ",  test_labels.shape)
 print("train labels : ",  training_labels.shape)
 print('*********************\n\n\n')
 
-img_height = 28
-img_width = 28
-batch_size = 20
-# n_input = 784 * 3
 def get_next_batch(batch_index, batch_size) :
     # create imageset of matrix numInputs x numTotalPixels
     images = training_images[batch_index: batch_index+batch_size]
     labels = training_labels[batch_index: batch_index+batch_size]
     return images, labels
-
-# Parameters
-learning_rate = 0.001
-training_iters = len(training)
-n_epochs = 30
-display_step = 10
-
-# Store layers weight & bias
-nnInputHeight = 4
-nnInputWidth = 4
-# nnInputHeight = 85
-# nnInputWidth = 77
-numKernels1 = 64
-numKernels2 = 128
-numKernels3 = 256
-numNeurons1 = 1024
-numNeurons2 = 1024
-numImageChannels = 3
-
-# Network Parameters
-# n_input = 784 # MNIST data input (img shape: 28*28)
-n_classes = 36 #  total classes (0-9 digits)
-dropout = 0.8 # Dropout, probability to keep units
 
 # tf Graph input
 inputs = tf.placeholder(tf.float32, [None, img_height, img_width, numImageChannels])
@@ -240,10 +233,6 @@ with tf.Session() as sess:
             batch_images, batch_labels  = get_next_batch(batch_index, batch_size)
             batch_index += batch_size
 
-            # batch_images = np.reshape(batch_images, (-1, batch_size))
-            # batch_labels =  np.reshape(batch_labels, (-1, batch_size))
-            # print(batch_images.shape)
-
             # Fit training using batch data
             sess.run(optimizer, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: dropout})
 
@@ -270,7 +259,6 @@ with tf.Session() as sess:
                 print("Stopping training to prevent overfitting.")
                 break
         
-
     print("Optimization Finished!")
     print("Testing Accuracy: ", sess.run(accuracy, feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.}))
 

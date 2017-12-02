@@ -8,6 +8,8 @@ import imageio
 max_width  = 28 
 max_height = 28
 
+exclude_label_list = [ "j", "z"]
+
 # hand5_e_bot_seg_5_cropped.png
 class image() : 
 	def __init__(self, signer_num, gesture , ill , R, matrix):
@@ -73,6 +75,13 @@ def create_imageset(excludeHardClasses=True):
 	for i in image_files : 
 		#split 
 		info = i.split('_')
+		if excludeHardClasses and info[1] in exclude_label_list:
+			continue
+		if info[1] == '0':
+			info[1] = 'o'
+		if info[1] == '2':
+			info[1] = 'v'
+
 		matrix = cv2.imread(images_path + '/' + i)
 		RGB_img = cv2.cvtColor(matrix, cv2.COLOR_BGR2RGB)
 		# scale image
@@ -83,7 +92,7 @@ def create_imageset(excludeHardClasses=True):
 		matrix = pad_image(RGB_img)
 		# cv2.imshow('image',matrix)
 
-		
+
 		image_set.append(image(int(info[len(info[0])-1]), info[1] , info[2] , info[4] , matrix))
 
 		# plt.subplot(231),plt.imshow(RGB_img,'gray'),plt.title('ORIGINAL')
