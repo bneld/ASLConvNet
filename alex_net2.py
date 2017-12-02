@@ -1,13 +1,43 @@
 import tensorflow as tf
-import preprocess 
+import preprocess
 import numpy as np
 import matplotlib.pyplot as plt
+from random import sample
 
-data_set = preprocess.create_imageset() 
-print("Created data set.");
+def split_by_percent(data_set):
+    num_val = int(len(data_set)*0.2)
+    num_test = int(len(data_set)*0.2)
+    num_train = len(data_set) - num_val - num_test
+    # extract test data
+    test_indices = sample(range(len(data_set)), num_test)
+    test_data = data_set[test_indices]
+    data_set = np.delete(data_set, test_indices, 0)
+    # extract validation data
+    val_indices = sample(range(len(data_set)), num_val)
+    val_data = data_set[val_indices]
+    # rest is training data
+    train_data = np.delete(data_set, val_indices, 0)
+    return train_data, val_data, test_data
 
-training = data_set[:400]
-test = data_set[400:501]
+usePercentage = True
+usePersonSplit1 = False
+usePersonSplit2 = False
+
+# read in images
+data_set = np.array(preprocess.create_imageset())
+print("Created data set.")
+
+image_set = np.array([np.array(i.matrix).reshape(28,28,3) for i in data_set])
+
+# training = data_set[:400]
+# test = data_set[400:501]
+#Splits
+# 3 subject for training, 1 validation, 1 testing
+# def split_train_val_test():
+
+# Mix everything: 60% training, 20% validation, 20% testing
+if usePercentage:
+    training, validation, test = split_by_percent(data_set)
 
 # training_images = np.array(np.array(i.matrix).reshape(28,28,3) for i in training)
 test_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in test])
@@ -26,7 +56,7 @@ print('*********************\n\n\n')
 img_height = 28
 img_width = 28
 batch_size = 20
-# n_input = 784 * 3 
+# n_input = 784 * 3
 def get_next_batch(batch_index, batch_size) :
     # create imageset of matrix numInputs x numTotalPixels
     images = training_images[batch_index: batch_index+batch_size]
@@ -57,7 +87,7 @@ n_classes = 36 #  total classes (0-9 digits)
 dropout = 0.8 # Dropout, probability to keep units
 
 # tf Graph input
-inputs = tf.placeholder(tf.float32, [None, img_height, img_width, numImageChannels]) 
+inputs = tf.placeholder(tf.float32, [None, img_height, img_width, numImageChannels])
 classes = tf.placeholder(tf.float32, [None, n_classes])
 predicted_classes = tf.placeholder(tf.float32, [None, n_classes])
 keep_prob = tf.placeholder(tf.float32) # dropout (keep probability)
@@ -74,8 +104,6 @@ def norm(name, l_input, lsize=4):
 
 def alex_net(_X, _weights, _biases, _dropout):
     # Reshape input picture
-    # height = 28
-    # width = 28
     height = 28
     width = 28
     _X = tf.reshape(_X, shape=[-1, height, width, 3]) #REVISIT
@@ -169,7 +197,7 @@ with tf.Session() as sess:
     for epoch in range(1, n_epochs+1):
         print("\n ===== Epoch {} ====\n".format(epoch))
         step = 1
-        batch_index = 0 
+        batch_index = 0
 
         # Keep training until reach max iterations
         while step * batch_size < training_iters:
@@ -193,11 +221,11 @@ with tf.Session() as sess:
             step += 1
         # end of epoch
         acc = sess.run(accuracy, feed_dict={inputs: training_images, classes: training_labels, keep_prob: 1.})
-        print("Training Accuracy on Full Set = {}".format(acc))
+        print("Training Accuracy on Full Training Set = {}".format(acc))
         training_acc.append(acc)
 
     print("Optimization Finished!")
-    print("Testing Accuracy:", sess.run(accuracy, feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.}))
+    print("Testing Accuracy: ", sess.run(accuracy, feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.}))
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -207,8 +235,3 @@ plt.title("Training Accuracy")
 plt.plot(training_acc)
 plt.legend()
 plt.show()
-
-
-
-
-

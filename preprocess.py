@@ -5,8 +5,6 @@ from os.path import isfile, join
 import imageio
 
 #for padding purposes 
-# max_width  = 610 
-# max_height = 680
 max_width  = 28 
 max_height = 28
 
@@ -62,7 +60,7 @@ def pad_image(target_image) :
 
 	return cv2.copyMakeBorder(target_image,int(pad_top),int(pad_bottom),int(pad_left),int(pad_right),cv2.BORDER_CONSTANT)
 
-def create_imageset():
+def create_imageset(excludeHardClasses=True):
 	#Variables
 	images_path = './images'
 
@@ -75,33 +73,23 @@ def create_imageset():
 	for i in image_files : 
 		#split 
 		info = i.split('_')
-		# print(info)
 		matrix = cv2.imread(images_path + '/' + i)
 		RGB_img = cv2.cvtColor(matrix, cv2.COLOR_BGR2RGB)
 		# scale image
 		height, width = RGB_img.shape[0], RGB_img.shape[1]
-		# print(scale_height_keep_ratio(RGB_img, max_height) if height > width else scale_width_keep_ratio(RGB_img, max_width))
 		dimensions = scale_height_keep_ratio(RGB_img, max_height) if height > width else scale_width_keep_ratio(RGB_img, max_width)
 		RGB_img = scale_image(RGB_img, dimensions)
-		# print(str(RGB_img.shape[0]) + ", " + str(RGB_img.shape[1]))
 		# pad image to 100 x 100
 		matrix = pad_image(RGB_img)
-		# print(str(matrix.shape[0]) + ", " + str(matrix.shape[1]))
-
-
 		# cv2.imshow('image',matrix)
-		# cv2.waitKey(0)
 
+		
 		image_set.append(image(int(info[len(info[0])-1]), info[1] , info[2] , info[4] , matrix))
 
 		# plt.subplot(231),plt.imshow(RGB_img,'gray'),plt.title('ORIGINAL')
 		# plt.subplot(236),plt.imshow(matrix,'gray'),plt.title('NEW')
 		# plt.show()
 
-		# break 
-	final_result = image_set
-
-	return final_result
-
+	return image_set
 
 
