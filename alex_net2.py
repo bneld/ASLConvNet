@@ -1,13 +1,39 @@
 import tensorflow as tf
-import preprocess 
+import preprocess
 import numpy as np
 import matplotlib.pyplot as plt
 
-data_set = preprocess.create_imageset() 
+data_set = preprocess.create_imageset()
 print("Created data set.");
 
-training = data_set[:400]
-test = data_set[400:501]
+##Experiments split
+def split_train_val_test(split_t): 
+    #training
+    if split_t == 1 :
+        training_data = [i for i in data_set if i.signer_num <=4 ]
+        test_data = [i for i in data_set if i.signer_num == 5 ]
+        return [training_data , test_data]
+    elif split_t == 2: 
+        training_data = [ i for i in data_set if i.signer_num <=3]
+        validation_data = [i for i in data_set if i.signer_num == 4 ]
+        testing_data = [i  for i in data_set if i.signer_num == 5 ]
+        return [training_data , validation_data , testing_data]
+    else : 
+        print('Error Split Type : ' , split_t , ' is not supported')
+
+train_test_test = split_train_val_test(1)
+print("Split 1")
+print("Training Set  : " , len(train_test_test[0])) 
+print("Testing  Set  : " , len(train_test_test[1]))
+
+train_validation_test = split_train_val_test(2)
+print("Split 1")
+print("Training    Set  : " , len(train_validation_test[0]))
+print("Validation  Set  : " , len(train_validation_test[1])) 
+print("Testing     Set  : " , len(train_validation_test[2]))
+
+
+
 
 # training_images = np.array(np.array(i.matrix).reshape(28,28,3) for i in training)
 test_images= np.array([np.array(i.matrix).reshape(28,28,3) for i in test])
@@ -23,10 +49,12 @@ print("test labels : ",  test_labels.shape)
 print("train labels : ",  training_labels.shape)
 print('*********************\n\n\n')
 
+
+
 img_height = 28
 img_width = 28
 batch_size = 20
-# n_input = 784 * 3 
+# n_input = 784 * 3
 def get_next_batch(batch_index, batch_size) :
     # create imageset of matrix numInputs x numTotalPixels
     images = training_images[batch_index: batch_index+batch_size]
@@ -57,7 +85,7 @@ n_classes = 36 #  total classes (0-9 digits)
 dropout = 0.8 # Dropout, probability to keep units
 
 # tf Graph input
-inputs = tf.placeholder(tf.float32, [None, img_height, img_width, numImageChannels]) 
+inputs = tf.placeholder(tf.float32, [None, img_height, img_width, numImageChannels])
 classes = tf.placeholder(tf.float32, [None, n_classes])
 predicted_classes = tf.placeholder(tf.float32, [None, n_classes])
 keep_prob = tf.placeholder(tf.float32) # dropout (keep probability)
@@ -169,7 +197,7 @@ with tf.Session() as sess:
     for epoch in range(1, n_epochs+1):
         print("\n ===== Epoch {} ====\n".format(epoch))
         step = 1
-        batch_index = 0 
+        batch_index = 0
 
         # Keep training until reach max iterations
         while step * batch_size < training_iters:
@@ -207,8 +235,3 @@ plt.title("Training Accuracy")
 plt.plot(training_acc)
 plt.legend()
 plt.show()
-
-
-
-
-
