@@ -150,34 +150,25 @@ def alex_net(_X, _weights, _biases, _dropout):
 
     # Convolution Layer
     conv2 = conv2d('conv2', norm1, _weights['wc2'], _biases['bc2'])
-    # image is 340 x 305 x 128
     # Max Pooling (down-sampling)
     pool2 = max_pool('pool2', conv2, k=2)
-    # image is 170 x 153 x 128
     # Apply Normalization
     norm2 = norm('norm2', pool2, lsize=4)
-    # image is 170 x 153 x 128
     # Apply Dropout
     norm2 = tf.nn.dropout(norm2, _dropout)
-    # image is 170 x 153 x 128
 
     # Convolution Layer
     conv3 = conv2d('conv3', norm2, _weights['wc3'], _biases['bc3'])
-    # image is 170 x 153 x 256
     # Max Pooling (down-sampling)
     pool3 = max_pool('pool3', conv3, k=2)
-    # image is 85 x 77 x 256
     # Apply Normalization
     norm3 = norm('norm3', pool3, lsize=4)
-    # image is 85 x 77 x 256
     # Apply Dropout
     norm3 = tf.nn.dropout(norm3, _dropout)
-    # image is 85 x 77 x 256
 
     # Fully connected layer
     dense1 = tf.reshape(norm3, [-1, _weights['wd1'].get_shape().as_list()[0]]) # Reshape conv3 output to fit dense layer input
     dense1 = tf.nn.relu(tf.matmul(dense1, _weights['wd1']) + _biases['bd1'], name='fc1') # Relu activation
-
     dense2 = tf.nn.relu(tf.matmul(dense1, _weights['wd2']) + _biases['bd2'], name='fc2') # Relu activation
 
     # Output, class prediction
@@ -212,10 +203,13 @@ optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 # Evaluate model
 correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(classes,1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+is_in_top5 = tf.cast(tf.nn.in_top_k(predictions=pred, targets=tf.argmax(classes,1), k=5), tf.float32)
+top5 = tf.reduce_mean(tf.cast(is_in_top5, tf.float32))
 
 # Initializing the variables
 init = tf.global_variables_initializer()
 training_acc = []
+training_top5 = []
 
 if have_validation:
     old_val_acc = -1 * sys.maxsize
@@ -236,19 +230,23 @@ with tf.Session() as sess:
             # Fit training using batch data
             sess.run(optimizer, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: dropout})
 
-            if step % display_step == 0:
+            # if step % display_step == 0:
                 # Calculate batch accuracy
-                acc = sess.run(accuracy, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: 1.})
+                # acc = sess.run(accuracy, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: 1.})
                 # Calculate batch loss
-                loss = sess.run(cost, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: 1.})
-                print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + "{:.6f}".format(loss) + ", Batch Accuracy= " + "{:.5f}".format(acc))
+                # loss = sess.run(cost, feed_dict={inputs: batch_images, classes: batch_labels, keep_prob: 1.})
+                # print("Iter {}, Minibatch Loss= {:.6f}, Batch Accuracy= {:.5f}".format(step*batch_size, loss, acc))
             step += 1
         # end of epoch
         # calculate training acc
-        acc = sess.run(accuracy, feed_dict={inputs: training_images, classes: training_labels, keep_prob: 1.})
-        print("Accuracy on Training Set = {}".format(acc))
+        acc,epoch_top5 = sess.run([accuracy, top5], 
+            feed_dict={inputs: training_images, classes: training_labels, keep_prob: 1.})
+        print("Top 1 Accuracy on Training Set = {}".format(acc))
+        print("Top 5 Accuracy on Training Set = {}".format(epoch_top5))
         training_acc.append(acc)
-        # calculate validation accuracy every two steps
+        training_top5.append(epoch_top5)
+
+        # calculate validation accuracy every five epochs
         if have_validation and epoch % 5 == 0: 
             curr_val_acc = sess.run(accuracy, feed_dict={inputs: validation_images, classes: validation_labels, keep_prob: 1.})
             print("Accuracy on Validation Set = {}".format(curr_val_acc))
@@ -259,14 +257,24 @@ with tf.Session() as sess:
                 print("Stopping training after Epoch {} to prevent overfitting.".format(epoch))
                 break
             old_val_acc = curr_val_acc
-        
-    print("Testing Accuracy: ", sess.run(accuracy, feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.}))
+    test_acc, test_top5 = sess.run([accuracy, top5], feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.})
+    print("Top 1 Accuracy on Test Data: ", test_acc)
+    print("Top 5 Accuracy on Test Data: ", test_top5)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.set_xlabel('Epoch')
-ax.set_ylabel('Accuracy')
-plt.title("Training Accuracy")
+ax.set_ylabel('Top 1 Accuracy')
+plt.title("Top 1 Accuracy on Training Data")
 plt.plot(training_acc)
+plt.legend()
+plt.show()
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_xlabel('Epoch')
+ax.set_ylabel('Top 5 Accuracy')
+plt.title("Top 5 Accuracy on Training Data")
+plt.plot(training_top5)
 plt.legend()
 plt.show()
