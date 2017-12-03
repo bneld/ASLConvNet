@@ -52,7 +52,7 @@ batch_size = 20
 # Parameters
 learning_rate = 0.001
 
-n_epochs = 30
+n_epochs = 90
 display_step = 10
 
 # Store layers weight & bias
@@ -249,15 +249,16 @@ with tf.Session() as sess:
         print("Accuracy on Training Set = {}".format(acc))
         training_acc.append(acc)
         # calculate validation accuracy every two steps
-        if have_validation and epoch % 2 == 0: 
+        if have_validation and epoch % 5 == 0: 
             curr_val_acc = sess.run(accuracy, feed_dict={inputs: validation_images, classes: validation_labels, keep_prob: 1.})
             print("Accuracy on Validation Set = {}".format(curr_val_acc))
             if(curr_val_acc < old_val_acc):
                 # validation accuracy is getting worse
                 # so end training to prevent overfitting
                 print("Validation accuracy has decreased ({} -> {})".format(old_val_acc, curr_val_acc))
-                print("Stopping training to prevent overfitting.")
+                print("Stopping training after Epoch {} to prevent overfitting.".format(epoch))
                 break
+            old_val_acc = curr_val_acc
         
     print("Testing Accuracy: ", sess.run(accuracy, feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.}))
 
