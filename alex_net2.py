@@ -34,6 +34,12 @@ def split_train_val_test(split_t):
     else: 
         print('Error Split Type : ' , split_t , ' is not supported')
 
+def get_next_batch(batch_index, batch_size, training_images) :
+    # create imageset of matrix numInputs x numTotalPixels
+    images = training_images[batch_index: batch_index+batch_size]
+    labels = training_labels[batch_index: batch_index+batch_size]
+    return images, labels
+
 usePercentage = True
 usePersonSplit1 = False
 usePersonSplit2 = False
@@ -60,7 +66,7 @@ numNeurons2 = 1024
 numImageChannels = 3
 
 # Network Parameters
-n_classes = 36 #  total classes (0-9 digits)
+n_classes = 32 # (0-9, a-z) excluding j,z and o,v
 dropout = 0.8 # Dropout, probability to keep units
 
 # read in images
@@ -105,12 +111,6 @@ print("training images : ",  training_images.shape)
 print("test labels : ",  test_labels.shape)
 print("train labels : ",  training_labels.shape)
 print('*********************\n\n\n')
-
-def get_next_batch(batch_index, batch_size) :
-    # create imageset of matrix numInputs x numTotalPixels
-    images = training_images[batch_index: batch_index+batch_size]
-    labels = training_labels[batch_index: batch_index+batch_size]
-    return images, labels
 
 # tf Graph input
 inputs = tf.placeholder(tf.float32, [None, img_height, img_width, numImageChannels])
@@ -230,7 +230,7 @@ with tf.Session() as sess:
         # Keep training until reach max iterations
         while step * batch_size < training_iters:
             print("Step: " + str(step))
-            batch_images, batch_labels  = get_next_batch(batch_index, batch_size)
+            batch_images, batch_labels  = get_next_batch(batch_index, batch_size, training_images)
             batch_index += batch_size
 
             # Fit training using batch data
@@ -259,7 +259,6 @@ with tf.Session() as sess:
                 print("Stopping training to prevent overfitting.")
                 break
         
-    print("Optimization Finished!")
     print("Testing Accuracy: ", sess.run(accuracy, feed_dict={inputs: test_images, classes: test_labels, keep_prob: 1.}))
 
 fig = plt.figure()

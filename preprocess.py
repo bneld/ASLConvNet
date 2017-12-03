@@ -15,13 +15,18 @@ class image() :
 	def __init__(self, signer_num, gesture , ill , R, matrix):
 		self.signer_num  = signer_num
 		self.label = gesture
-		self.label_vec = np.zeros(36)
+		self.label_vec = np.zeros(32)
 		order = ord(gesture)
 		if order <= 57: 
 			self.label_vec[order - 48] = 1 
-
-		else : 
+		elif 97 <= order and order <= 105:
 			self.label_vec[order - 87] = 1
+		elif 107 <= order and order <= 110:
+			self.label_vec[order - 88] = 1
+		elif 112 <= order and order <= 117:
+			self.label_vec[order - 89] = 1
+		elif 119 <= order and order <= 121:
+			self.label_vec[order - 90] = 1
 
 		self.ill = ill
 		self.R = R
@@ -77,10 +82,10 @@ def create_imageset(excludeHardClasses=True):
 		info = i.split('_')
 		if excludeHardClasses and info[1] in exclude_label_list:
 			continue
-		if info[1] == '0':
-			info[1] = 'o'
-		if info[1] == '2':
-			info[1] = 'v'
+		if info[1] == 'o':
+			info[1] = '0'
+		if info[1] == 'v':
+			info[1] = '2'
 
 		matrix = cv2.imread(images_path + '/' + i)
 		RGB_img = cv2.cvtColor(matrix, cv2.COLOR_BGR2RGB)
