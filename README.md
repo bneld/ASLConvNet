@@ -27,4 +27,4 @@ Once you have downloaded the [dataset](http://www.massey.ac.nz/~albarcza/gesture
 ```
 python alex_net2.py
 ```
-
+Also, make sure to review the documentation to learn more about the approach taken in this project. 
