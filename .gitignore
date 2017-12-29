@@ -1,15 +1,2 @@
-/images
 .DS_Store
-bvlc_alexnet.npy
 /__pycache__
-*.gz
-input_data.py
-input_data.pyc
-cv.py
-test.png
-mnist.py
-t10k-images-idx3-ubyte.gz
-t10k-labels-idx1-ubyte.gz
-train-labels-idx1-ubyte.gz
-train-images-idx3-ubyte.gz
-train-labels-idx1-ubyte.gz

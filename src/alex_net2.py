@@ -184,7 +184,7 @@ def alex_net(_X, _weights, _biases, _dropout):
     out = tf.matmul(dense2, _weights['out']) + _biases['out']
     return out
 
-#                                       |----- kernel --------| |num layers|
+
 weights = {
     'wc1': tf.Variable(tf.random_normal([3, 3, numImageChannels, numKernels1])),
     'wc2': tf.Variable(tf.random_normal([3, 3, numKernels1, numKernels2])),

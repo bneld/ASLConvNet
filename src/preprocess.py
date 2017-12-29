@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from os import listdir
 from os.path import isfile, join
-import imageio
 
 #for padding purposes 
 max_width  = 28 
@@ -100,9 +99,7 @@ def create_imageset(excludeHardClasses=True):
 
 		image_set.append(image(int(info[len(info[0])-1]), info[1] , info[2] , info[4] , matrix))
 
-		# plt.subplot(231),plt.imshow(RGB_img,'gray'),plt.title('ORIGINAL')
-		# plt.subplot(236),plt.imshow(matrix,'gray'),plt.title('NEW')
-		# plt.show()
+
 
 	return image_set
 
